@@ -1,10 +1,15 @@
 CFLAGS=-std=c11 -g -fno-common -Wall -Wno-switch
+CXXFLAGS=-std=c++11 -g -fno-common -Wall -Wno-switch -fno-exceptions -fno-stack-protector -fno-use-cxa-atexit
 
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
 
 TEST_SRCS=$(wildcard test/*.c)
 TESTS=$(TEST_SRCS:.c=.exe)
+
+RT_LIB_SRC=compiler-rt/libdiysan.cc
+RT_LIB_OBJ=compiler-rt/libdiysan.o
+RT_LIB_NAME=compiler-rt/libdiysan.a
 
 # Stage 1
 
@@ -41,10 +46,20 @@ test-stage2: $(TESTS:test/%=stage2/test/%)
 	for i in $^; do echo $$i; ./$$i || exit 1; echo; done
 	test/driver.sh ./stage2/chibicc
 
+# Runtime.
+$(RT_LIB_NAME): $(RT_LIB_OBJ)
+	ar rcs $@ $^
+
+$(RT_LIB_OBJ): $(RT_LIB_SRC)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
 # Misc.
+
+all: $(RT_LIB_NAME) chibicc
 
 clean:
 	rm -rf chibicc tmp* $(TESTS) test/*.s test/*.exe stage2
 	find * -type f '(' -name '*~' -o -name '*.o' ')' -exec rm {} ';'
+	find * -type f '(' -name '*~' -o -name '*.a' ')' -exec rm {} ';'
 
 .PHONY: test clean test-stage2

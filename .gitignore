@@ -1,5 +1,6 @@
 **/*~
 **/\#*
+**/*.a
 **/*.o
 **/*.s
 **/a.out
@@ -8,3 +9,4 @@
 /chibicc
 /test/*.exe
 /stage2
+/sample/memo

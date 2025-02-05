@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <glob.h>
 #include <libgen.h>
+#include <linux/limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -454,4 +455,5 @@ bool file_exists(char *path);
 extern StringArray include_paths;
 extern bool opt_fpic;
 extern bool opt_fcommon;
+extern bool opt_sanitize;
 extern char *base_file;

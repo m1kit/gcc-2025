@@ -7,6 +7,7 @@ typedef enum {
 StringArray include_paths;
 bool opt_fcommon = true;
 bool opt_fpic;
+bool opt_sanitize;
 
 static FileType opt_x;
 static StringArray opt_include;
@@ -310,6 +311,11 @@ static void parse_args(int argc, char **argv) {
       continue;
     }
 
+    if (!strcmp(argv[i], "-fsanitize")) {
+      opt_sanitize = true;
+      continue;
+    }
+
     if (!strcmp(argv[i], "-hashmap-test")) {
       hashmap_test();
       exit(0);
@@ -598,9 +604,9 @@ static char *find_libpath(void) {
 
 static char *find_gcc_libpath(void) {
   char *paths[] = {
-    "/usr/lib/gcc/x86_64-linux-gnu/*/crtbegin.o",
-    "/usr/lib/gcc/x86_64-pc-linux-gnu/*/crtbegin.o", // For Gentoo
-    "/usr/lib/gcc/x86_64-redhat-linux/*/crtbegin.o", // For Fedora
+    "/usr/lib/gcc/x86_64-linux-gnu/*/libstdc++.so",
+    "/usr/lib/gcc/x86_64-pc-linux-gnu/*/libstdc++.so", // For Gentoo
+    "/usr/lib/gcc/x86_64-redhat-linux/*/libstdc++.so", // For Fedora
   };
 
   for (int i = 0; i < sizeof(paths) / sizeof(*paths); i++) {
@@ -612,6 +618,26 @@ static char *find_gcc_libpath(void) {
   error("gcc library path is not found");
 }
 
+static char *find_rt_libpath(void) {
+  char* path = malloc(PATH_MAX);
+  if (!path) {
+    error("malloc");
+  }
+
+  size_t len = readlink("/proc/self/exe", path, PATH_MAX - 1);
+  if (len == -1) {
+    error("readlink failed");
+  }
+  path[len] = '\0';
+
+  path = dirname(path);
+  if (path == NULL) {
+    error("dirname");
+  }
+  
+  return format("%s/compiler-rt", path);
+}
+
 static void run_linker(StringArray *inputs, char *output) {
   StringArray arr = {};
 
@@ -620,9 +646,12 @@ static void run_linker(StringArray *inputs, char *output) {
   strarray_push(&arr, output);
   strarray_push(&arr, "-m");
   strarray_push(&arr, "elf_x86_64");
+  strarray_push(&arr, "-z");
+  strarray_push(&arr, "noexecstack");
 
   char *libpath = find_libpath();
   char *gcc_libpath = find_gcc_libpath();
+  char *rt_libpath = find_rt_libpath();
 
   if (opt_shared) {
     strarray_push(&arr, format("%s/crti.o", libpath));
@@ -658,10 +687,16 @@ static void run_linker(StringArray *inputs, char *output) {
     strarray_push(&arr, "--start-group");
     strarray_push(&arr, "-lgcc");
     strarray_push(&arr, "-lgcc_eh");
+    if (opt_sanitize) {
+      strarray_push(&arr, "-lstdc++");
+    }
     strarray_push(&arr, "-lc");
     strarray_push(&arr, "--end-group");
   } else {
     strarray_push(&arr, "-lc");
+    if (opt_sanitize) {
+      strarray_push(&arr, "-lstdc++");
+    }
     strarray_push(&arr, "-lgcc");
     strarray_push(&arr, "--as-needed");
     strarray_push(&arr, "-lgcc_s");
@@ -672,6 +707,10 @@ static void run_linker(StringArray *inputs, char *output) {
     strarray_push(&arr, format("%s/crtendS.o", gcc_libpath));
   else
     strarray_push(&arr, format("%s/crtend.o", gcc_libpath));
+
+  if (opt_sanitize) {
+    strarray_push(&arr, format("%s/libdiysan.a", rt_libpath));
+  }
 
   strarray_push(&arr, format("%s/crtn.o", libpath));
   strarray_push(&arr, NULL);

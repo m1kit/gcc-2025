@@ -140,10 +140,12 @@ static void gen_addr(Node *node) {
 
     // Function
     if (node->ty->kind == TY_FUNC) {
+      char* name = node->var->name;
+
       if (node->var->is_definition)
-        println("  lea %s(%%rip), %%rax", node->var->name);
+        println("  lea %s(%%rip), %%rax", name);
       else
-        println("  mov %s@GOTPCREL(%%rip), %%rax", node->var->name);
+        println("  mov %s@GOTPCREL(%%rip), %%rax", name);
       return;
     }
 
@@ -246,6 +248,23 @@ static void store(Type *ty) {
   case TY_LDOUBLE:
     println("  fstpt (%%rdi)");
     return;
+  }
+
+  if (opt_sanitize) {
+    push();
+    println("  push %%rdi");
+    depth++;
+    if (depth % 2 == 1) {
+      println("  sub $8, %%rsp");
+    }
+    println("  mov $0, %%rax");
+    println("  mov _diysan_store@GOTPCREL(%%rip), %%r10");
+    println("  call *%%r10");
+    if (depth % 2 == 1) {
+      println("  add $8, %%rsp");
+    }
+    pop("%rdi");
+    pop("%rax");
   }
 
   if (ty->size == 1)

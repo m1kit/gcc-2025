@@ -1,4 +1,16 @@
-# chibicc: A Small C Compiler
+# chibicc + DIY sanitizer
+
+DIY sanitizer is an educational project to build your own
+[code sanitizer](https://en.wikipedia.org/wiki/Code_sanitizer) on
+top of chibicc C compiler.
+This repository is just a template and does not contain
+real sanitizer functionality, but contains foundation like
+compiler runtime.
+
+(For GCC trainees: refer [here](https://hackmd.io/@mikit/rJ6Ba8fFkg) for
+exercise details.)
+
+## About chibicc
 
 (The old master has moved to
 [historical/old](https://github.com/rui314/chibicc/tree/historical/old)
