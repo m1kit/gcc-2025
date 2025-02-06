@@ -36,4 +36,11 @@ void _diysan_free(void* p) {
 void _diysan_store(void* p) {
 }
 
+// Called on `exit()`.
+void _diysan_exit(int status) {
+  std::cerr << "exit(" << status << ")" << std::endl;
+
+  exit(status);
+}
+
 }

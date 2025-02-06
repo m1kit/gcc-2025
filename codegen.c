@@ -141,6 +141,9 @@ static void gen_addr(Node *node) {
     // Function
     if (node->ty->kind == TY_FUNC) {
       char* name = node->var->name;
+      if (!strcmp(name, "exit")) {
+        name = "_diysan_exit";
+      }
 
       if (node->var->is_definition)
         println("  lea %s(%%rip), %%rax", name);
