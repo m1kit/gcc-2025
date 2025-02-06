@@ -141,7 +141,11 @@ static void gen_addr(Node *node) {
     // Function
     if (node->ty->kind == TY_FUNC) {
       char* name = node->var->name;
-      if (!strcmp(name, "exit")) {
+      if (!strcmp(name, "malloc")) {
+        name = "_diysan_malloc";
+      } else if (!strcmp(name, "free")) {
+        name = "_diysan_free";
+      } else if (!strcmp(name, "exit")) {
         name = "_diysan_exit";
       }
 
