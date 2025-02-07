@@ -84,11 +84,4 @@ void _diysan_exit(int status) {
   exit(status);
 }
 
-// Called on `exit()`.
-void _diysan_exit(int status) {
-  std::cerr << "exit(" << status << ")" << std::endl;
-
-  exit(status);
-}
-
 }
